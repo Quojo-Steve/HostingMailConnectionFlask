@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template,request
 from dotenv import load_dotenv
 import os
 from flask_mail import Mail, Message
@@ -25,19 +25,24 @@ def whereami():
     return "Ghana"
 
 @app.post('/mail')
+@app.get('/mail')
 def send_mail():
-    message = Message(
-        subject="How are you doing today?",
-        recipients=["ahmedashafa12@gmail.com"],
-        sender="quojosteve@gmail.com"
-    )
-    message.body = "I sent you a message mf "
-    
-    try:
-        mail.send(message)
-        return "Sucessful"
-    except Exception as e:
-        return e
-
+    if request.method == 'POST':
+        name = request.form.get('fullName')
+        email = request.form.get('email')
+        message_sent = request.form.get('message')
+        message = Message(
+            subject=f"How are you doing today? {name}",
+            recipients=["ahmedashafa12@gmail.com"],
+            sender=email
+        )
+        message.body = message_sent
+        
+        try:
+            mail.send(message)
+            return render_template('thanks.html')
+        except Exception as e:
+            return e
+    return render_template('form.html')
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0',port=8000)
