@@ -1,5 +1,6 @@
 from flask import Flask, render_template,request
 from dotenv import load_dotenv
+import sqlite3
 import os
 from flask_mail import Mail, Message
 
@@ -15,14 +16,64 @@ app.config['MAIL_USE_SSL'] = False
 
 mail = Mail(app)
 
+def connect_to_db() -> sqlite3.Connection:
+    conn = sqlite3.connect('sqlitedb.db')
+    return conn
+
 @app.route('/')
 def index():
     return 'Hello boys!!!'
 
 
-@app.route('/whereami')
+@app.route('/db')
 def whereami():
+    # try:
+    #     con = connect_to_db()
+    #     con.execute('''
+    #         CREATE TABLE users(
+    #             id INTEGER PRIMARY KEY AUTOINCREMENT,
+    #             firstname TEXT NOT NULL,
+    #             lastname TEXT NOT NULL,
+    #             email TEXT UNIQUE NOT NULL
+    #         );
+    #     ''')
+    #     con.commit()
+    #     con.close()
+        
+    #     return "Sucess"
+    # except sqlite3.Error as e:
+    #     return str(e)
     return "Ghana"
+
+@app.get("/signup")
+@app.post("/signup")
+def signup():
+    if request.method == "POST":
+        firstname = request.form['fname']
+        lastname = request.form['lname']
+        email = request.form['email']
+
+        try:
+            con = connect_to_db()
+            con.execute('''
+                CREATE TABLE IF NOT EXISTS users(
+                    id INT PRIMARY KEY AUTOINCREMENT,
+                    firstname TEXT NOT NULL,
+                    lastname TEXT NOT NULL,
+                    email TEXT UNIQUE NOT NULL
+                );
+            ''')
+            con.execute('''
+            INSERT INTO users(
+                    firstname,lastname,email
+                ) VALUES (?,?,?)
+            ''',(firstname,lastname,email))
+            con.commit()
+            con.close()
+            return str("Sucess")
+        except sqlite3.Error as e:
+            return str(e)
+    return render_template('signup.html')
 
 @app.post('/mail')
 @app.get('/mail')
